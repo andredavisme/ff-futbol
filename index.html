@@ -7,29 +7,20 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300..700&display=swap" rel="stylesheet">
 <style>
-/* ═══════════════════════════════════════════════
-   DESIGN TOKENS — paintable CSS variables
-   Override these to reskin the entire game
-═══════════════════════════════════════════════ */
 :root {
   --font-display: 'Space Mono', monospace;
   --font-body: 'Inter', sans-serif;
-
   --text-xs:   clamp(0.75rem,  0.7rem  + 0.25vw, 0.875rem);
   --text-sm:   clamp(0.875rem, 0.8rem  + 0.35vw, 1rem);
   --text-base: clamp(1rem,     0.95rem + 0.25vw, 1.125rem);
   --text-lg:   clamp(1.125rem, 1rem    + 0.75vw, 1.5rem);
   --text-xl:   clamp(1.5rem,   1.2rem  + 1.25vw, 2.25rem);
   --text-2xl:  clamp(2rem,     1.2rem  + 2.5vw,  3.5rem);
-
   --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem;
   --space-4: 1rem;    --space-6: 1.5rem; --space-8: 2rem;
   --space-12: 3rem;
-
   --radius-sm: 0.25rem; --radius-md: 0.5rem;
   --radius-lg: 0.75rem; --radius-full: 9999px;
-
-  /* GAME PALETTE — all canvas colors reference these */
   --game-bg:          #0a0e14;
   --game-field:       #0d1117;
   --game-field-line:  #1a2332;
@@ -47,8 +38,6 @@
   --game-text-muted:  #6b7280;
   --game-hud-bg:      rgba(10,14,20,0.92);
   --game-hud-border:  rgba(37,99,235,0.3);
-
-  /* UI shell */
   --color-bg: #080b10;
   --color-surface: #0f1420;
   --color-surface-2: #141922;
@@ -64,8 +53,6 @@
   --shadow-md: 0 4px 24px rgba(0,0,0,0.5);
   --transition: 160ms cubic-bezier(0.16,1,0.3,1);
 }
-
-/* BASE */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { height: 100%; -webkit-font-smoothing: antialiased; }
 body {
@@ -81,8 +68,6 @@ body {
 }
 button { cursor: pointer; background: none; border: none; font: inherit; color: inherit; }
 input { font: inherit; color: inherit; }
-
-/* LAYOUT */
 #app {
   width: 100%;
   max-width: 1100px;
@@ -91,8 +76,6 @@ input { font: inherit; color: inherit; }
   flex-direction: column;
   gap: var(--space-4);
 }
-
-/* HEADER */
 header {
   display: flex;
   align-items: center;
@@ -120,8 +103,6 @@ header {
   text-transform: uppercase;
 }
 .header-actions { display: flex; gap: var(--space-2); align-items: center; }
-
-/* BUTTONS */
 .btn {
   display: inline-flex; align-items: center; gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
@@ -130,32 +111,19 @@ header {
   transition: background var(--transition), color var(--transition), border-color var(--transition);
   border: 1px solid transparent;
 }
-.btn-primary {
-  background: var(--color-primary); color: #fff;
-  border-color: var(--color-primary);
-}
+.btn-primary { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
 .btn-primary:hover { background: var(--color-primary-hover); border-color: var(--color-primary-hover); }
-.btn-accent {
-  background: var(--color-accent); color: #fff;
-  border-color: var(--color-accent);
-}
+.btn-accent { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
 .btn-accent:hover { background: var(--color-accent-hover); }
-.btn-ghost {
-  background: transparent; color: var(--color-text-muted);
-  border-color: var(--color-border);
-}
+.btn-ghost { background: transparent; color: var(--color-text-muted); border-color: var(--color-border); }
 .btn-ghost:hover { color: var(--color-text); border-color: rgba(37,99,235,0.5); }
 .btn-sm { padding: var(--space-1) var(--space-3); font-size: var(--text-xs); }
-
-/* GAME AREA */
 #game-wrap {
   position: relative;
   display: flex;
   gap: var(--space-4);
   align-items: flex-start;
 }
-
-/* HUD SIDEBAR */
 #hud {
   width: 200px;
   flex-shrink: 0;
@@ -186,24 +154,13 @@ header {
 .hud-value.timer { color: var(--color-gold); }
 .hud-value.timer.urgent { color: #ef4444; animation: pulse-red 0.5s ease infinite alternate; }
 @keyframes pulse-red { from { opacity:1; } to { opacity:0.6; } }
-.score-breakdown {
-  display: flex; flex-direction: column; gap: var(--space-1);
-  margin-top: var(--space-2);
-}
-.score-row {
-  display: flex; justify-content: space-between; align-items: center;
-  font-size: var(--text-xs); color: var(--color-text-muted);
-}
+.score-breakdown { display: flex; flex-direction: column; gap: var(--space-1); margin-top: var(--space-2); }
+.score-row { display: flex; justify-content: space-between; align-items: center; font-size: var(--text-xs); color: var(--color-text-muted); }
 .score-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: var(--space-1); }
 .dot-target { background: var(--color-pink); }
 .dot-player { background: var(--color-gold); }
 .dot-match  { background: var(--color-primary); }
-
-/* CONTROLS LEGEND */
-.controls-list {
-  display: flex; flex-direction: column; gap: var(--space-2);
-  font-size: var(--text-xs); color: var(--color-text-muted);
-}
+.controls-list { display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--text-xs); color: var(--color-text-muted); }
 .ctrl-row { display: flex; justify-content: space-between; gap: var(--space-2); }
 .ctrl-key {
   background: var(--color-surface-2);
@@ -215,8 +172,6 @@ header {
   color: var(--color-text);
   white-space: nowrap;
 }
-
-/* CANVAS CONTAINER */
 #canvas-container {
   flex: 1;
   position: relative;
@@ -226,8 +181,6 @@ header {
   box-shadow: 0 0 40px rgba(37,99,235,0.15);
 }
 #gameCanvas { display: block; }
-
-/* OVERLAYS */
 .overlay {
   position: absolute; inset: 0;
   display: flex; flex-direction: column;
@@ -240,151 +193,40 @@ header {
   transition: opacity var(--transition);
 }
 .overlay.hidden { display: none; }
-.overlay-title {
-  font-family: var(--font-display);
-  font-size: var(--text-2xl);
-  letter-spacing: -0.03em;
-  text-align: center;
-  line-height: 1.1;
-}
-.overlay-sub {
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  text-align: center;
-  max-width: 40ch;
-}
+.overlay-title { font-family: var(--font-display); font-size: var(--text-2xl); letter-spacing: -0.03em; text-align: center; line-height: 1.1; }
+.overlay-sub { font-size: var(--text-sm); color: var(--color-text-muted); text-align: center; max-width: 40ch; }
 .overlay-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; justify-content: center; }
-
-/* SESSION PANEL */
-.session-box {
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
-  width: 100%;
-  max-width: 360px;
-}
-.session-id {
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  color: var(--color-accent);
-  word-break: break-all;
-  margin-top: var(--space-2);
-  letter-spacing: 0.05em;
-}
-.session-stats {
-  display: grid; grid-template-columns: 1fr 1fr 1fr;
-  gap: var(--space-3); margin-top: var(--space-4);
-}
+.session-box { background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-4); width: 100%; max-width: 360px; }
+.session-id { font-family: var(--font-display); font-size: var(--text-xs); color: var(--color-accent); word-break: break-all; margin-top: var(--space-2); letter-spacing: 0.05em; }
+.session-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-3); margin-top: var(--space-4); }
 .stat-item { text-align: center; }
-.stat-num {
-  font-family: var(--font-display);
-  font-size: var(--text-lg);
-  color: var(--color-text);
-  line-height: 1;
-}
+.stat-num { font-family: var(--font-display); font-size: var(--text-lg); color: var(--color-text); line-height: 1; }
 .stat-lbl { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: var(--space-1); }
-
-/* NAME INPUT */
-.name-input-wrap {
-  display: flex; gap: var(--space-2); width: 100%; max-width: 360px;
-}
-.name-input {
-  flex: 1;
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--text-sm);
-  outline: none;
-  transition: border-color var(--transition);
-}
+.name-input-wrap { display: flex; gap: var(--space-2); width: 100%; max-width: 360px; }
+.name-input { flex: 1; background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2) var(--space-3); font-size: var(--text-sm); outline: none; transition: border-color var(--transition); }
 .name-input:focus { border-color: var(--color-primary); }
-
-/* RESUME SECTION */
-.resume-wrap {
-  display: flex; gap: var(--space-2); width: 100%; max-width: 360px;
-}
-.resume-input {
-  flex: 1;
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--text-xs);
-  font-family: var(--font-display);
-  outline: none;
-  transition: border-color var(--transition);
-}
+.resume-wrap { display: flex; gap: var(--space-2); width: 100%; max-width: 360px; }
+.resume-input { flex: 1; background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2) var(--space-3); font-size: var(--text-xs); font-family: var(--font-display); outline: none; transition: border-color var(--transition); }
 .resume-input:focus { border-color: var(--color-accent); }
-
-/* LEADERBOARD */
-#leaderboard-wrap {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-.lb-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: var(--space-4) var(--space-6);
-  border-bottom: 1px solid var(--color-border);
-}
-.lb-title {
-  font-family: var(--font-display);
-  font-size: var(--text-sm);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.lb-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.lb-table th {
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 400;
-  padding: var(--space-2) var(--space-4);
-  text-align: left;
-  border-bottom: 1px solid var(--color-border);
-  font-family: var(--font-display);
-}
-.lb-table td {
-  padding: var(--space-3) var(--space-4);
-  font-size: var(--text-sm);
-  border-bottom: 1px solid rgba(37,99,235,0.08);
-}
+#leaderboard-wrap { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
+.lb-header { display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--color-border); }
+.lb-title { font-family: var(--font-display); font-size: var(--text-sm); letter-spacing: 0.08em; text-transform: uppercase; }
+.lb-table { width: 100%; border-collapse: collapse; }
+.lb-table th { font-size: var(--text-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 400; padding: var(--space-2) var(--space-4); text-align: left; border-bottom: 1px solid var(--color-border); font-family: var(--font-display); }
+.lb-table td { padding: var(--space-3) var(--space-4); font-size: var(--text-sm); border-bottom: 1px solid rgba(37,99,235,0.08); }
 .lb-table tr:last-child td { border-bottom: none; }
 .lb-table tr:hover td { background: var(--color-surface-2); }
-.rank-badge {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px;
-  border-radius: var(--radius-sm);
-  font-family: var(--font-display);
-  font-size: 11px;
-  font-weight: 700;
-}
+.rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: var(--radius-sm); font-family: var(--font-display); font-size: 11px; font-weight: 700; }
 .rank-1 { background: rgba(245,158,11,0.2); color: var(--color-gold); }
 .rank-2 { background: rgba(156,163,175,0.2); color: #9ca3af; }
 .rank-3 { background: rgba(180,83,9,0.2); color: #b45309; }
 .rank-n { background: var(--color-surface-2); color: var(--color-text-muted); }
-.tier-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-}
+.tier-badge { display: inline-block; padding: 2px 8px; border-radius: var(--radius-full); font-size: 10px; letter-spacing: 0.06em; }
 .tier-1 { background: rgba(245,158,11,0.15); color: var(--color-gold); border: 1px solid rgba(245,158,11,0.3); }
 .tier-2 { background: rgba(37,99,235,0.15); color: #60a5fa; border: 1px solid rgba(37,99,235,0.3); }
 .tier-3 { background: rgba(16,185,129,0.15); color: var(--color-accent); border: 1px solid rgba(16,185,129,0.3); }
 .tier-4 { background: rgba(107,114,128,0.15); color: var(--color-text-muted); border: 1px solid rgba(107,114,128,0.3); }
-
 .pts { font-family: var(--font-display); color: var(--color-text); }
-
-/* SCORE FLASH */
 #score-flash {
   position: absolute;
   top: 50%;
@@ -398,8 +240,6 @@ header {
   text-shadow: 0 0 20px currentColor;
   transition: none;
 }
-
-/* NOTIFICATION TOAST */
 #toast {
   position: fixed; bottom: var(--space-6); right: var(--space-6);
   background: var(--color-surface);
@@ -415,10 +255,7 @@ header {
   max-width: 300px;
 }
 #toast.show { opacity: 1; transform: translateY(0); }
-
-/* TABULAR NUMS */
 .tabnum { font-variant-numeric: tabular-nums; }
-
 @media (max-width: 700px) {
   #game-wrap { flex-direction: column; }
   #hud { width: 100%; flex-direction: row; flex-wrap: wrap; }
@@ -428,19 +265,14 @@ header {
 </head>
 <body>
 <div id="app">
-  <!-- HEADER -->
   <header>
     <div class="logo">
       <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-label="Field Frame logo">
         <rect x="2" y="6" width="28" height="20" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" opacity="0.3"/>
         <path d="M2 16h28" stroke="currentColor" stroke-width="1" opacity="0.3"/>
         <path d="M16 6v20" stroke="currentColor" stroke-width="1" opacity="0.3"/>
-        <!-- Goal opening top-left -->
-        <rect x="5" y="4" width="6" height="4" rx="1" fill="#10b981" opacity="0.8"/>
-        <rect x="21" y="4" width="6" height="4" rx="1" fill="#10b981" opacity="0.8"/>
-        <!-- Player triangle -->
+        <rect x="11" y="4" width="10" height="4" rx="1" fill="#10b981" opacity="0.9"/>
         <polygon points="16,18 13,24 19,24" fill="#f59e0b"/>
-        <!-- Target dot -->
         <circle cx="10" cy="12" r="2.5" fill="#ec4899"/>
       </svg>
       <div>
@@ -454,10 +286,7 @@ header {
     </div>
   </header>
 
-  <!-- GAME AREA -->
   <div id="game-wrap">
-
-    <!-- LEFT HUD -->
     <div id="hud">
       <div class="hud-panel">
         <div class="hud-label">Match Time</div>
@@ -495,15 +324,13 @@ header {
       </div>
     </div>
 
-    <!-- CANVAS -->
     <div id="canvas-container">
       <canvas id="gameCanvas"></canvas>
       <div id="score-flash"></div>
 
-      <!-- START OVERLAY -->
       <div class="overlay" id="overlay-start">
         <div class="overlay-title">Field Frame</div>
-        <div class="overlay-sub">A soccer-style arena game. Score by sending the target or yourself through the exit goals at the top. Navigate obstacles, chain points, and climb the brackets.</div>
+        <div class="overlay-sub">A soccer-style arena game. Score by sending the target or yourself through the center goal at the top. Navigate obstacles, chain points, and climb the brackets.</div>
         <div class="name-input-wrap">
           <input class="name-input" id="player-name-input" type="text" placeholder="Your name (optional)" maxlength="32" autocomplete="off"/>
         </div>
@@ -513,7 +340,6 @@ header {
         <div class="overlay-sub" style="font-size:var(--text-xs)">3 pts for target goal · 1 pt for player exit · 3 min matches</div>
       </div>
 
-      <!-- PAUSE OVERLAY -->
       <div class="overlay hidden" id="overlay-pause">
         <div class="overlay-title">Paused</div>
         <div class="overlay-actions">
@@ -522,7 +348,6 @@ header {
         </div>
       </div>
 
-      <!-- MATCH END OVERLAY -->
       <div class="overlay hidden" id="overlay-matchend">
         <div class="overlay-title" id="matchend-title">Match Over!</div>
         <div class="session-box">
@@ -540,7 +365,6 @@ header {
         </div>
       </div>
 
-      <!-- SESSION END OVERLAY -->
       <div class="overlay hidden" id="overlay-sessionend">
         <div class="overlay-title">Session Complete</div>
         <div class="session-box">
@@ -552,17 +376,15 @@ header {
             <div class="stat-item"><div class="stat-num tabnum" id="se-avg">0</div><div class="stat-lbl">Avg / match</div></div>
           </div>
         </div>
-        <div class="overlay-sub">Copy your session ID to return and continue accumulating points toward the brackets.</div>
+        <div class="overlay-sub">Copy your session ID to return and continue accumulating points.</div>
         <div class="overlay-actions">
           <button class="btn btn-primary" id="copy-id-btn">⎘ Copy ID</button>
           <button class="btn btn-ghost" id="new-game-btn">↺ New Game</button>
         </div>
       </div>
+    </div>
+  </div>
 
-    </div><!-- /canvas-container -->
-  </div><!-- /game-wrap -->
-
-  <!-- LEADERBOARD -->
   <div id="leaderboard-wrap" style="display:none;">
     <div class="lb-header">
       <div class="lb-title">⚡ Global Brackets — Lifetime Points</div>
@@ -571,12 +393,7 @@ header {
     <table class="lb-table" id="lb-table">
       <thead>
         <tr>
-          <th>#</th>
-          <th>Player</th>
-          <th>Lifetime Pts</th>
-          <th>Matches</th>
-          <th>Avg</th>
-          <th>Bracket Tier</th>
+          <th>#</th><th>Player</th><th>Lifetime Pts</th><th>Matches</th><th>Avg</th><th>Bracket Tier</th>
         </tr>
       </thead>
       <tbody id="lb-body">
@@ -584,13 +401,10 @@ header {
       </tbody>
     </table>
   </div>
+</div>
 
-</div><!-- /app -->
-
-<!-- TOAST -->
 <div id="toast"></div>
 
-<!-- RESUME MODAL (inline hidden section) -->
 <div class="overlay hidden" id="overlay-resume" style="position:fixed;inset:0;z-index:200;">
   <div class="session-box" style="max-width:400px;">
     <div class="hud-label">Resume Session</div>
@@ -632,9 +446,9 @@ async function dbFetch(path, opts = {}) {
    GAME STATE
 ═══════════════════════════════════════════════ */
 const STATE = {
-  phase: 'start',   // start | playing | paused | matchend | sessionend
-  session: null,    // { id, playerId, displayName, totalScore, matchCount }
-  match: null,      // { score, targetGoals, playerGoals, startTime, events }
+  phase: 'start',
+  session: null,
+  match: null,
   timerSecs: 180,
   timerInterval: null,
 };
@@ -648,8 +462,18 @@ const ctx = canvas.getContext('2d');
 const FIELD = {
   W: 700, H: 520,
   wallT: 8,
-  exitW: 80,   // width of goal opening
-  exitH: 24,   // depth of exit zone (above top wall)
+  goalW: 100,   // single center goal width
+};
+
+// Single center goal
+const GOAL = {
+  get x() { return FIELD.W/2 - FIELD.goalW/2; },
+  get w() { return FIELD.goalW; },
+  y: 0,
+  h: FIELD.wallT + 2,
+  // Goal zone: the region above y=0 within x range
+  // We track scored = false to prevent double counting during a single crossing
+  scored: false,
 };
 
 function resizeCanvas() {
@@ -664,70 +488,70 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
-/* CSS variable reader for canvas */
 function cv(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
 /* ═══════════════════════════════════════════════
+   PHYSICS CONSTANTS  (real-world style)
+═══════════════════════════════════════════════ */
+// Coefficient of restitution: 0=perfectly inelastic, 1=perfectly elastic
+const COR_BALL_WALL   = 0.72;   // target vs walls/obstacles
+const COR_BALL_PLAYER = 0.85;   // target vs player
+const COR_PLAYER_WALL = 0.45;   // player vs walls
+const COR_PLAYER_OBS  = 0.50;   // player vs obstacle
+// Effective masses (arbitrary units for momentum transfer)
+const MASS_PLAYER = 3.0;
+const MASS_TARGET = 1.0;
+const MASS_OBSTACLE = Infinity; // immovable
+
+/* ═══════════════════════════════════════════════
    PHYSICS ENTITIES
 ═══════════════════════════════════════════════ */
-// Player: rectangle with triangle front indicator
 const PLAYER = {
   x: FIELD.W/2, y: FIELD.H - 80,
-  w: 28, h: 18,       // bounding rect
-  angle: -Math.PI/2,  // facing up initially
+  w: 28, h: 18,
+  angle: -Math.PI/2,
   vx: 0, vy: 0,
   speed: 0,
-  maxSpeed: 320,
-  accel: 420,
-  boost: 580,
-  friction: 0.88,
-  brakeForce: 0.55,
+  maxSpeed: 340,
+  accel: 480,
+  boostForce: 980,      // ↑ big boost on spacebar press
+  boostMaxSpeed: 700,   // uncapped during boost
+  friction: 0.86,
+  brakeForce: 0.42,
   rotSpeed: 3.2,
   respawning: false,
   respawnTimer: 0,
   active: true,
+  boostCooldown: 0,     // prevents instant re-boost spam
 };
 
-// Target: circle
 const TARGET = {
   x: FIELD.W/2, y: FIELD.H/2,
   r: 12,
   vx: 0, vy: 0,
-  friction: 0.92,
+  friction: 0.975,   // near-frictionless on field (roll)
   lastTouched: 'none',
   respawning: false,
   respawnTimer: 0,
   active: true,
+  // Safe-spawn: wait until fully clear of goal zone before re-arming score detection
+  scoreCooldown: 0,
 };
 
 const OBSTACLES = [];
 
-/* ═══════════════════════════════════════════════
-   EXIT ZONE GEOMETRY
-═══════════════════════════════════════════════ */
-// Two exits at top of field
-const EXITS = [
-  { // Left exit
-    x: FIELD.W * 0.25 - FIELD.exitW/2,
-    y: 0,
-    w: FIELD.exitW,
-    h: FIELD.wallT + 2,
-  },
-  { // Right exit
-    x: FIELD.W * 0.75 - FIELD.exitW/2,
-    y: 0,
-    w: FIELD.exitW,
-    h: FIELD.wallT + 2,
-  }
-];
+/* Bounding-circle radius of player */
+const PLAYER_R = Math.sqrt((28/2)**2 + (18/2)**2);
 
 /* ═══════════════════════════════════════════════
    INPUT
 ═══════════════════════════════════════════════ */
 const KEYS = {};
+const JUST_PRESSED = {};
 window.addEventListener('keydown', e => {
+  if (!KEYS[e.code]) JUST_PRESSED[e.code] = true;
   KEYS[e.code] = true;
   if (e.code === 'KeyP') togglePause();
   if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
@@ -742,9 +566,9 @@ function randInt(min, max)   { return Math.floor(randRange(min, max+1)); }
 
 function spawnObstacles() {
   OBSTACLES.length = 0;
-  const count = randInt(3, 5);
+  const count = randInt(3, 6);
   const margin = 60;
-  const topClear = FIELD.H * 0.35; // keep exit approach clear
+  const topClear = FIELD.H * 0.35;
   for (let i = 0; i < count; i++) {
     let tries = 0, placed = false;
     while (tries++ < 50 && !placed) {
@@ -752,9 +576,8 @@ function spawnObstacles() {
       const h = randRange(20, 50);
       const x = randRange(margin, FIELD.W - margin - w);
       const y = randRange(topClear, FIELD.H - margin - h);
-      // avoid overlapping existing
       const overlap = OBSTACLES.some(o =>
-        x < o.x+o.w+16 && x+w > o.x-16 && y < o.y+o.h+16 && y+h > o.y-16
+        x < o.x+o.w+20 && x+w > o.x-20 && y < o.y+o.h+20 && y+h > o.y-20
       );
       if (!overlap) { OBSTACLES.push({x, y, w, h}); placed = true; }
     }
@@ -764,7 +587,7 @@ function spawnObstacles() {
 function randomFieldPos(margin=60) {
   return {
     x: randRange(margin, FIELD.W - margin),
-    y: randRange(FIELD.H * 0.4, FIELD.H - margin)
+    y: randRange(FIELD.H * 0.45, FIELD.H - margin)
   };
 }
 
@@ -776,20 +599,25 @@ function resetPlayer() {
   PLAYER.angle = -Math.PI/2;
   PLAYER.active = true;
   PLAYER.respawning = false;
+  PLAYER.boostCooldown = 0;
 }
 
-function resetTarget() {
+function resetTarget(delay=0) {
+  // delay: extra cooldown before score detection re-arms
   const p = randomFieldPos(60);
   TARGET.x = p.x; TARGET.y = p.y;
-  TARGET.vx = randRange(-60,60);
-  TARGET.vy = randRange(-60,0);
+  TARGET.vx = randRange(-80, 80);
+  TARGET.vy = randRange(-80, 30);
   TARGET.active = true;
   TARGET.respawning = false;
   TARGET.lastTouched = 'none';
+  // scoreCooldown: prevents counting a score the instant the ball spawns
+  // This also covers the edge case where spawn happens inside or near goal zone
+  TARGET.scoreCooldown = 0.6 + delay;
 }
 
 /* ═══════════════════════════════════════════════
-   COLLISION — AABB and circle helpers
+   COLLISION — AABB helpers
 ═══════════════════════════════════════════════ */
 function circleRect(cx, cy, cr, rx, ry, rw, rh) {
   const nearX = Math.max(rx, Math.min(cx, rx + rw));
@@ -798,20 +626,42 @@ function circleRect(cx, cy, cr, rx, ry, rw, rh) {
   return dx*dx + dy*dy < cr*cr;
 }
 
-function resolveCircleRect(entity, rx, ry, rw, rh) {
-  // find closest point on rect
+/* Elastic collision: circle vs immovable rect, returns true if collided */
+function resolveCircleRect(entity, rx, ry, rw, rh, cor) {
   const nearX = Math.max(rx, Math.min(entity.x, rx + rw));
   const nearY = Math.max(ry, Math.min(entity.y, ry + rh));
   const dx = entity.x - nearX, dy = entity.y - nearY;
   const dist = Math.sqrt(dx*dx + dy*dy);
-  if (dist === 0) return;
+  if (dist === 0 || dist >= entity.r) return false;
   const nx = dx/dist, ny = dy/dist;
-  const r = entity.r || 10;
-  entity.x = nearX + nx*(r+1);
-  entity.y = nearY + ny*(r+1);
+  // push out
+  entity.x = nearX + nx*(entity.r + 1);
+  entity.y = nearY + ny*(entity.r + 1);
+  // reflect velocity along normal with restitution
   const dot = entity.vx*nx + entity.vy*ny;
-  entity.vx -= 2*dot*nx * 0.7;
-  entity.vy -= 2*dot*ny * 0.7;
+  if (dot < 0) {
+    entity.vx -= (1 + cor) * dot * nx;
+    entity.vy -= (1 + cor) * dot * ny;
+  }
+  return true;
+}
+
+/* Player wall collision using bounding-circle proxy */
+function resolvePlayerCircleRect(rx, ry, rw, rh, cor) {
+  const nearX = Math.max(rx, Math.min(PLAYER.x, rx + rw));
+  const nearY = Math.max(ry, Math.min(PLAYER.y, ry + rh));
+  const dx = PLAYER.x - nearX, dy = PLAYER.y - nearY;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  if (dist === 0 || dist >= PLAYER_R) return false;
+  const nx = dx/dist, ny = dy/dist;
+  PLAYER.x = nearX + nx*(PLAYER_R + 1);
+  PLAYER.y = nearY + ny*(PLAYER_R + 1);
+  const dot = PLAYER.vx*nx + PLAYER.vy*ny;
+  if (dot < 0) {
+    PLAYER.vx -= (1 + cor) * dot * nx;
+    PLAYER.vy -= (1 + cor) * dot * ny;
+  }
+  return true;
 }
 
 /* rotated rectangle corners for player */
@@ -826,45 +676,49 @@ function playerCorners() {
   }));
 }
 
-/* get bounding circle radius for player */
-const PLAYER_R = Math.sqrt((PLAYER.w/2)**2 + (PLAYER.h/2)**2);
-
 /* ═══════════════════════════════════════════════
    GOAL / SCORING DETECTION
+   Only scores when entity fully clears y<=0 and is within goal x-range.
+   scoreCooldown prevents counting a target that just spawned or just scored.
 ═══════════════════════════════════════════════ */
-function checkExits(dt) {
-  EXITS.forEach(exit => {
-    // --- TARGET check ---
-    if (TARGET.active && !TARGET.respawning) {
-      // target fully past top (y - r <= 0) and within exit x range
-      const tLeft  = TARGET.x - TARGET.r;
-      const tRight = TARGET.x + TARGET.r;
-      const tTop   = TARGET.y - TARGET.r;
-      if (tTop <= 0 && tLeft >= exit.x && tRight <= exit.x + exit.w) {
-        // full hitbox cleared
-        onScore('target');
-        TARGET.respawning = true;
-        TARGET.active = false;
-        TARGET.respawnTimer = 3;
-      }
-    }
+function isInGoalXRange(left, right) {
+  return left >= GOAL.x && right <= GOAL.x + GOAL.w;
+}
 
-    // --- PLAYER check ---
-    if (PLAYER.active && !PLAYER.respawning) {
-      const corners = playerCorners();
-      const allX = corners.map(c=>c.x);
-      const allY = corners.map(c=>c.y);
-      const pLeft  = Math.min(...allX);
-      const pRight = Math.max(...allX);
-      const pTopActual = Math.min(...allY);
-      if (pTopActual <= 0 && pLeft >= exit.x && pRight <= exit.x + exit.w) {
-        onScore('player');
-        PLAYER.respawning = true;
-        PLAYER.active = false;
-        PLAYER.respawnTimer = 3;
+function checkGoal(dt) {
+  // --- TARGET ---
+  if (TARGET.active && !TARGET.respawning) {
+    if (TARGET.scoreCooldown > 0) {
+      TARGET.scoreCooldown -= dt;
+    } else {
+      const tL = TARGET.x - TARGET.r;
+      const tR = TARGET.x + TARGET.r;
+      const tT = TARGET.y - TARGET.r;
+      if (tT <= 0 && isInGoalXRange(tL, tR)) {
+        onScore('target');
+        TARGET.active = false;
+        TARGET.respawning = true;
+        // Respawn timer: 1.2s hidden + score cooldown baked in
+        TARGET.respawnTimer = 1.2;
       }
     }
-  });
+  }
+
+  // --- PLAYER ---
+  if (PLAYER.active && !PLAYER.respawning) {
+    const corners = playerCorners();
+    const allX = corners.map(c=>c.x);
+    const allY = corners.map(c=>c.y);
+    const pL = Math.min(...allX);
+    const pR = Math.max(...allX);
+    const pT = Math.min(...allY);
+    if (pT <= 0 && isInGoalXRange(pL, pR)) {
+      onScore('player');
+      PLAYER.active = false;
+      PLAYER.respawning = true;
+      PLAYER.respawnTimer = 1.5;
+    }
+  }
 }
 
 /* ═══════════════════════════════════════════════
@@ -923,31 +777,45 @@ function update(ts) {
   const dt = lastTime ? Math.min((ts - lastTime)/1000, 0.05) : 0.016;
   lastTime = ts;
 
+  // Clear just-pressed after use
+  const justSpace = JUST_PRESSED['Space'];
+  JUST_PRESSED['Space'] = false;
+
   // --- Player input ---
   if (PLAYER.active && !PLAYER.respawning) {
     if (KEYS['ArrowLeft'])  PLAYER.angle -= PLAYER.rotSpeed * dt;
     if (KEYS['ArrowRight']) PLAYER.angle += PLAYER.rotSpeed * dt;
 
-    const boosting = KEYS['Space'];
-    const braking  = KEYS['ControlRight'];
-    const accelForce = boosting ? PLAYER.boost : PLAYER.accel;
+    const braking = KEYS['ControlRight'];
+    PLAYER.boostCooldown = Math.max(0, PLAYER.boostCooldown - dt);
 
+    // Normal forward/backward
     if (KEYS['ArrowUp']) {
-      PLAYER.vx += Math.cos(PLAYER.angle) * accelForce * dt;
-      PLAYER.vy += Math.sin(PLAYER.angle) * accelForce * dt;
+      PLAYER.vx += Math.cos(PLAYER.angle) * PLAYER.accel * dt;
+      PLAYER.vy += Math.sin(PLAYER.angle) * PLAYER.accel * dt;
     }
     if (KEYS['ArrowDown']) {
-      PLAYER.vx -= Math.cos(PLAYER.angle) * accelForce * 0.5 * dt;
-      PLAYER.vy -= Math.sin(PLAYER.angle) * accelForce * 0.5 * dt;
+      PLAYER.vx -= Math.cos(PLAYER.angle) * PLAYER.accel * 0.5 * dt;
+      PLAYER.vy -= Math.sin(PLAYER.angle) * PLAYER.accel * 0.5 * dt;
+    }
+
+    // BOOST: large impulse on spacebar press (while cooldown expired)
+    if (KEYS['Space'] && PLAYER.boostCooldown <= 0) {
+      // Impulse in facing direction — adds momentum, not just sets velocity
+      const impulse = PLAYER.boostForce * dt;
+      PLAYER.vx += Math.cos(PLAYER.angle) * impulse;
+      PLAYER.vy += Math.sin(PLAYER.angle) * impulse;
+      PLAYER.boostCooldown = 0.08; // slight cooldown to prevent instant double-tap abuse
     }
 
     const fric = braking ? PLAYER.brakeForce : PLAYER.friction;
     PLAYER.vx *= Math.pow(fric, dt*60);
     PLAYER.vy *= Math.pow(fric, dt*60);
 
-    // clamp speed
+    // Speed cap (no cap during boost to allow burst)
     const spd = Math.sqrt(PLAYER.vx**2 + PLAYER.vy**2);
-    const maxSpd = boosting ? PLAYER.boost : PLAYER.maxSpeed;
+    const boosting = KEYS['Space'] && PLAYER.boostCooldown <= 0.07;
+    const maxSpd = boosting ? PLAYER.boostMaxSpeed : PLAYER.maxSpeed;
     if (spd > maxSpd) {
       PLAYER.vx = (PLAYER.vx/spd)*maxSpd;
       PLAYER.vy = (PLAYER.vy/spd)*maxSpd;
@@ -956,40 +824,60 @@ function update(ts) {
     PLAYER.x += PLAYER.vx * dt;
     PLAYER.y += PLAYER.vy * dt;
 
-    // Wall collisions
-    if (PLAYER.x - PLAYER_R < FIELD.wallT) { PLAYER.x = FIELD.wallT + PLAYER_R; PLAYER.vx *= -0.5; }
-    if (PLAYER.x + PLAYER_R > FIELD.W - FIELD.wallT) { PLAYER.x = FIELD.W - FIELD.wallT - PLAYER_R; PLAYER.vx *= -0.5; }
-    if (PLAYER.y + PLAYER_R > FIELD.H - FIELD.wallT) { PLAYER.y = FIELD.H - FIELD.wallT - PLAYER_R; PLAYER.vy *= -0.5; }
+    // Wall collisions with COR
+    if (PLAYER.x - PLAYER_R < FIELD.wallT) {
+      PLAYER.x = FIELD.wallT + PLAYER_R;
+      if (PLAYER.vx < 0) PLAYER.vx *= -(COR_PLAYER_WALL);
+    }
+    if (PLAYER.x + PLAYER_R > FIELD.W - FIELD.wallT) {
+      PLAYER.x = FIELD.W - FIELD.wallT - PLAYER_R;
+      if (PLAYER.vx > 0) PLAYER.vx *= -(COR_PLAYER_WALL);
+    }
+    if (PLAYER.y + PLAYER_R > FIELD.H - FIELD.wallT) {
+      PLAYER.y = FIELD.H - FIELD.wallT - PLAYER_R;
+      if (PLAYER.vy > 0) PLAYER.vy *= -(COR_PLAYER_WALL);
+    }
+    // Top wall: block unless in goal opening
     if (PLAYER.y - PLAYER_R < FIELD.wallT) {
-      const inExit = EXITS.some(e => PLAYER.x > e.x && PLAYER.x < e.x + e.w);
-      if (!inExit) { PLAYER.y = FIELD.wallT + PLAYER_R; PLAYER.vy *= -0.5; }
+      const corners = playerCorners();
+      const pL = Math.min(...corners.map(c=>c.x));
+      const pR = Math.max(...corners.map(c=>c.x));
+      const inGoal = isInGoalXRange(pL, pR);
+      if (!inGoal) {
+        PLAYER.y = FIELD.wallT + PLAYER_R;
+        if (PLAYER.vy < 0) PLAYER.vy *= -(COR_PLAYER_WALL);
+      }
     }
 
     // Obstacle collisions
     OBSTACLES.forEach(o => {
-      if (circleRect(PLAYER.x, PLAYER.y, PLAYER_R, o.x, o.y, o.w, o.h)) {
-        const pseudo = { x: PLAYER.x, y: PLAYER.y, r: PLAYER_R, vx: PLAYER.vx, vy: PLAYER.vy };
-        resolveCircleRect(pseudo, o.x, o.y, o.w, o.h);
-        PLAYER.x = pseudo.x; PLAYER.y = pseudo.y;
-        PLAYER.vx = pseudo.vx; PLAYER.vy = pseudo.vy;
-      }
+      resolvePlayerCircleRect(o.x, o.y, o.w, o.h, COR_PLAYER_OBS);
     });
 
-    // Player-target collision
-    const dx = TARGET.x - PLAYER.x, dy = TARGET.y - PLAYER.y;
-    const dist = Math.sqrt(dx*dx+dy*dy);
-    if (dist < PLAYER_R + TARGET.r && TARGET.active) {
-      TARGET.lastTouched = 'player';
-      const nx = dx/dist, ny = dy/dist;
-      const relVx = PLAYER.vx - TARGET.vx, relVy = PLAYER.vy - TARGET.vy;
-      const dot = relVx*nx + relVy*ny;
-      TARGET.vx += dot*nx * 1.4;
-      TARGET.vy += dot*ny * 1.4;
-      PLAYER.vx -= dot*nx * 0.3;
-      PLAYER.vy -= dot*ny * 0.3;
-      const overlap = PLAYER_R + TARGET.r - dist + 1;
-      PLAYER.x -= nx*overlap*0.5; PLAYER.y -= ny*overlap*0.5;
-      TARGET.x += nx*overlap*0.5; TARGET.y += ny*overlap*0.5;
+    // Player-target elastic collision (mass-weighted)
+    if (TARGET.active && !TARGET.respawning) {
+      const dx = TARGET.x - PLAYER.x, dy = TARGET.y - PLAYER.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < PLAYER_R + TARGET.r && dist > 0) {
+        TARGET.lastTouched = 'player';
+        const nx = dx/dist, ny = dy/dist;
+        // Separate overlap
+        const overlap = PLAYER_R + TARGET.r - dist + 1;
+        const mT = MASS_TARGET, mP = MASS_PLAYER, mSum = mT + mP;
+        PLAYER.x -= nx * overlap * (mT/mSum);
+        PLAYER.y -= ny * overlap * (mT/mSum);
+        TARGET.x += nx * overlap * (mP/mSum);
+        TARGET.y += ny * overlap * (mP/mSum);
+        // 1D elastic collision along normal (COR)
+        const relV = (PLAYER.vx - TARGET.vx)*nx + (PLAYER.vy - TARGET.vy)*ny;
+        if (relV > 0) {
+          const j = (1 + COR_BALL_PLAYER) * relV / (1/mP + 1/mT);
+          PLAYER.vx -= (j/mP)*nx;
+          PLAYER.vy -= (j/mP)*ny;
+          TARGET.vx += (j/mT)*nx;
+          TARGET.vy += (j/mT)*ny;
+        }
+      }
     }
   }
 
@@ -1000,19 +888,35 @@ function update(ts) {
     TARGET.x += TARGET.vx * dt;
     TARGET.y += TARGET.vy * dt;
 
-    if (TARGET.x - TARGET.r < FIELD.wallT) { TARGET.x = FIELD.wallT + TARGET.r; TARGET.vx *= -0.6; }
-    if (TARGET.x + TARGET.r > FIELD.W - FIELD.wallT) { TARGET.x = FIELD.W - FIELD.wallT - TARGET.r; TARGET.vx *= -0.6; }
-    if (TARGET.y + TARGET.r > FIELD.H - FIELD.wallT) { TARGET.y = FIELD.H - FIELD.wallT - TARGET.r; TARGET.vy *= -0.6; }
+    // Wall bounces
+    if (TARGET.x - TARGET.r < FIELD.wallT) {
+      TARGET.x = FIELD.wallT + TARGET.r;
+      if (TARGET.vx < 0) TARGET.vx *= -(COR_BALL_WALL);
+    }
+    if (TARGET.x + TARGET.r > FIELD.W - FIELD.wallT) {
+      TARGET.x = FIELD.W - FIELD.wallT - TARGET.r;
+      if (TARGET.vx > 0) TARGET.vx *= -(COR_BALL_WALL);
+    }
+    if (TARGET.y + TARGET.r > FIELD.H - FIELD.wallT) {
+      TARGET.y = FIELD.H - FIELD.wallT - TARGET.r;
+      if (TARGET.vy > 0) TARGET.vy *= -(COR_BALL_WALL);
+    }
+    // Top wall: block unless in goal
     if (TARGET.y - TARGET.r < FIELD.wallT) {
-      const inExit = EXITS.some(e => TARGET.x > e.x && TARGET.x < e.x + e.w);
-      if (!inExit) { TARGET.y = FIELD.wallT + TARGET.r; TARGET.vy *= -0.6; }
+      const inGoal = TARGET.x >= GOAL.x && TARGET.x <= GOAL.x + GOAL.w;
+      if (!inGoal) {
+        TARGET.y = FIELD.wallT + TARGET.r;
+        if (TARGET.vy < 0) TARGET.vy *= -(COR_BALL_WALL);
+      }
     }
 
+    // Obstacle collisions
     OBSTACLES.forEach(o => {
-      if (circleRect(TARGET.x, TARGET.y, TARGET.r, o.x, o.y, o.w, o.h)) {
-        resolveCircleRect(TARGET, o.x, o.y, o.w, o.h);
-      }
+      resolveCircleRect(TARGET, o.x, o.y, o.w, o.h, COR_BALL_WALL);
     });
+
+    // Score cooldown tick
+    if (TARGET.scoreCooldown > 0) TARGET.scoreCooldown -= dt;
   }
 
   // --- Respawn timers ---
@@ -1022,11 +926,14 @@ function update(ts) {
   }
   if (TARGET.respawning) {
     TARGET.respawnTimer -= dt;
-    if (TARGET.respawnTimer <= 0) { resetTarget(); }
+    if (TARGET.respawnTimer <= 0) {
+      // Extra 0.4s cooldown after spawn before scoring is re-armed
+      resetTarget(0.4);
+    }
   }
 
   // --- Goal detection ---
-  checkExits(dt);
+  checkGoal(dt);
 
   // --- HUD ---
   updateHUD();
@@ -1037,10 +944,10 @@ function update(ts) {
 ═══════════════════════════════════════════════ */
 function render() {
   ctx.clearRect(0, 0, FIELD.W, FIELD.H);
-
   ctx.fillStyle = cv('--game-field');
   ctx.fillRect(0, 0, FIELD.W, FIELD.H);
 
+  // Field lines
   ctx.strokeStyle = cv('--game-field-line');
   ctx.lineWidth = 1;
   ctx.setLineDash([6, 8]);
@@ -1048,48 +955,48 @@ function render() {
   ctx.beginPath(); ctx.arc(FIELD.W/2, FIELD.H/2, 60, 0, Math.PI*2); ctx.stroke();
   ctx.setLineDash([]);
 
+  // Walls
   const wc = cv('--game-wall');
   ctx.fillStyle = wc;
-  ctx.fillRect(0, 0, FIELD.wallT, FIELD.H);
-  ctx.fillRect(FIELD.W - FIELD.wallT, 0, FIELD.wallT, FIELD.H);
-  ctx.fillRect(0, FIELD.H - FIELD.wallT, FIELD.W, FIELD.wallT);
-  ctx.fillRect(0, 0, EXITS[0].x, FIELD.wallT);
-  ctx.fillRect(EXITS[0].x + EXITS[0].w, 0, EXITS[1].x - (EXITS[0].x + EXITS[0].w), FIELD.wallT);
-  ctx.fillRect(EXITS[1].x + EXITS[1].w, 0, FIELD.W - (EXITS[1].x + EXITS[1].w), FIELD.wallT);
+  ctx.fillRect(0, 0, FIELD.wallT, FIELD.H);                            // left
+  ctx.fillRect(FIELD.W - FIELD.wallT, 0, FIELD.wallT, FIELD.H);       // right
+  ctx.fillRect(0, FIELD.H - FIELD.wallT, FIELD.W, FIELD.wallT);        // bottom
+  // Top wall — gap for single goal
+  const goalX = GOAL.x, goalW = GOAL.w;
+  ctx.fillRect(0,       0, goalX,              FIELD.wallT); // left of goal
+  ctx.fillRect(goalX + goalW, 0, FIELD.W - (goalX + goalW), FIELD.wallT); // right of goal
 
-  const wallGradL = ctx.createLinearGradient(0, 0, 0, FIELD.wallT + 6);
-  wallGradL.addColorStop(0, cv('--game-wall-glow'));
-  wallGradL.addColorStop(1, 'transparent');
-  ctx.fillStyle = wallGradL;
-  ctx.fillRect(0, 0, EXITS[0].x, FIELD.wallT + 6);
-  ctx.fillRect(EXITS[0].x + EXITS[0].w, 0, EXITS[1].x - (EXITS[0].x + EXITS[0].w), FIELD.wallT + 6);
-  ctx.fillRect(EXITS[1].x + EXITS[1].w, 0, FIELD.W - (EXITS[1].x + EXITS[1].w), FIELD.wallT + 6);
+  // Wall glow
+  const wallGrad = ctx.createLinearGradient(0, 0, 0, FIELD.wallT + 6);
+  wallGrad.addColorStop(0, cv('--game-wall-glow'));
+  wallGrad.addColorStop(1, 'transparent');
+  ctx.fillStyle = wallGrad;
+  ctx.fillRect(0,       0, goalX,              FIELD.wallT + 6);
+  ctx.fillRect(goalX + goalW, 0, FIELD.W - (goalX + goalW), FIELD.wallT + 6);
 
-  EXITS.forEach(exit => {
-    const grd = ctx.createLinearGradient(exit.x, 0, exit.x, 40);
-    grd.addColorStop(0, cv('--game-exit-glow'));
-    grd.addColorStop(1, 'transparent');
-    ctx.fillStyle = grd;
-    ctx.fillRect(exit.x, 0, exit.w, 40);
+  // Goal rendering
+  const grd = ctx.createLinearGradient(goalX, 0, goalX, 50);
+  grd.addColorStop(0, cv('--game-exit-glow'));
+  grd.addColorStop(1, 'transparent');
+  ctx.fillStyle = grd;
+  ctx.fillRect(goalX, 0, goalW, 50);
 
-    ctx.strokeStyle = cv('--game-exit');
-    ctx.lineWidth = 2;
-    ctx.shadowBlur = 8;
-    ctx.shadowColor = cv('--game-exit');
-    ctx.beginPath();
-    ctx.moveTo(exit.x, 0); ctx.lineTo(exit.x, FIELD.wallT + 8);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(exit.x + exit.w, 0); ctx.lineTo(exit.x + exit.w, FIELD.wallT + 8);
-    ctx.stroke();
-    ctx.shadowBlur = 0;
+  ctx.strokeStyle = cv('--game-exit');
+  ctx.lineWidth = 2.5;
+  ctx.shadowBlur = 12;
+  ctx.shadowColor = cv('--game-exit');
+  // Left post
+  ctx.beginPath(); ctx.moveTo(goalX, 0); ctx.lineTo(goalX, FIELD.wallT + 10); ctx.stroke();
+  // Right post
+  ctx.beginPath(); ctx.moveTo(goalX + goalW, 0); ctx.lineTo(goalX + goalW, FIELD.wallT + 10); ctx.stroke();
+  ctx.shadowBlur = 0;
 
-    ctx.fillStyle = cv('--game-exit');
-    ctx.font = '9px ' + cv('--font-display');
-    ctx.textAlign = 'center';
-    ctx.fillText('GOAL', exit.x + exit.w/2, 20);
-  });
+  ctx.fillStyle = cv('--game-exit');
+  ctx.font = '10px ' + cv('--font-display');
+  ctx.textAlign = 'center';
+  ctx.fillText('GOAL', goalX + goalW/2, 22);
 
+  // Obstacles
   OBSTACLES.forEach(o => {
     ctx.fillStyle = cv('--game-obstacle');
     roundRect(ctx, o.x, o.y, o.w, o.h, 4);
@@ -1100,22 +1007,34 @@ function render() {
     ctx.stroke();
   });
 
+  // Target
   if (TARGET.active && !TARGET.respawning) {
     drawTarget();
   } else if (TARGET.respawning) {
-    const progress = 1 - TARGET.respawnTimer/3;
+    const progress = 1 - TARGET.respawnTimer / 1.2;
     ctx.strokeStyle = cv('--game-target');
-    ctx.globalAlpha = 0.25 + progress * 0.2;
+    ctx.globalAlpha = 0.2 + progress * 0.25;
     ctx.lineWidth = 2;
     ctx.setLineDash([4,4]);
     ctx.beginPath();
-    ctx.arc(FIELD.W/2, FIELD.H/2, TARGET.r + 6, 0, Math.PI*2*progress);
+    ctx.arc(FIELD.W/2, FIELD.H * 0.6, TARGET.r + 8, 0, Math.PI*2*progress);
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.globalAlpha = 1;
   }
 
+  // Player
   if (PLAYER.active && !PLAYER.respawning) {
+    // Boost trail effect when boosting
+    if (KEYS['Space']) {
+      ctx.save();
+      ctx.globalAlpha = 0.18;
+      ctx.fillStyle = cv('--game-player-glow');
+      ctx.beginPath();
+      ctx.arc(PLAYER.x - Math.cos(PLAYER.angle)*18, PLAYER.y - Math.sin(PLAYER.angle)*18, PLAYER_R*1.4, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
     drawPlayer();
   } else if (PLAYER.respawning) {
     ctx.strokeStyle = cv('--game-player');
@@ -1132,27 +1051,22 @@ function drawPlayer() {
   ctx.save();
   ctx.translate(PLAYER.x, PLAYER.y);
   ctx.rotate(PLAYER.angle);
-
   const hw = PLAYER.w/2, hh = PLAYER.h/2;
-
   ctx.shadowBlur = 18;
   ctx.shadowColor = cv('--game-player-glow');
   ctx.fillStyle = cv('--game-player');
   ctx.globalAlpha = 0.9;
   roundRect(ctx, -hw, -hh, PLAYER.w, PLAYER.h, 3);
   ctx.fill();
-
   ctx.fillStyle = '#fff';
   ctx.globalAlpha = 1;
   ctx.shadowBlur = 0;
   ctx.beginPath();
   ctx.moveTo(hw + 7, 0);
   ctx.lineTo(hw - 1, -5);
-  ctx.lineTo(hw - 1, 5);
+  ctx.lineTo(hw - 1,  5);
   ctx.closePath();
   ctx.fill();
-
-  ctx.shadowBlur = 0;
   ctx.globalAlpha = 1;
   ctx.restore();
 }
@@ -1216,10 +1130,9 @@ function startTimer() {
     if (STATE.phase !== 'playing') return;
     STATE.timerSecs--;
     updateHUD();
-    if (STATE.timerSecs <= 0) { endMatch(); }
+    if (STATE.timerSecs <= 0) endMatch();
   }, 1000);
 }
-
 function pauseTimer()  { clearInterval(STATE.timerInterval); }
 function resumeTimer() {
   STATE.timerInterval = setInterval(() => {
@@ -1239,7 +1152,6 @@ function updateHUD() {
   const timerEl = document.getElementById('hud-timer');
   timerEl.textContent = `${mins}:${secs.toString().padStart(2,'0')}`;
   timerEl.classList.toggle('urgent', m <= 30);
-
   if (STATE.match) {
     document.getElementById('hud-score').textContent = STATE.match.score;
     document.getElementById('hud-tg').textContent = STATE.match.targetGoals;
@@ -1265,7 +1177,6 @@ function showOverlay(id) {
 ═══════════════════════════════════════════════ */
 async function startNewGame() {
   const name = document.getElementById('player-name-input').value.trim() || 'Anonymous';
-
   let playerId = null;
   const pRes = await dbFetch(`ff_players?display_name=eq.${encodeURIComponent(name)}&limit=1`, {method:'GET'});
   if (pRes && pRes.length > 0) {
@@ -1278,16 +1189,13 @@ async function startNewGame() {
     });
     if (newP && newP.length > 0) playerId = newP[0].id;
   }
-
   const sessRes = await dbFetch('ff_sessions', {
     method: 'POST',
     body: JSON.stringify({ player_id: playerId, display_name: name }),
     prefer: 'return=representation'
   });
-
   const sessionId = sessRes?.[0]?.id || crypto.randomUUID();
   STATE.session = { id: sessionId, playerId, displayName: name, totalScore: 0, matchCount: 0 };
-
   beginMatch();
 }
 
@@ -1295,13 +1203,7 @@ async function resumeSession(sessionId) {
   const res = await dbFetch(`ff_sessions?id=eq.${sessionId}&limit=1`, {method:'GET'});
   if (!res || res.length === 0) { showToast('Session not found.', 3000); return; }
   const s = res[0];
-  STATE.session = {
-    id: s.id,
-    playerId: s.player_id,
-    displayName: s.display_name,
-    totalScore: s.total_score,
-    matchCount: s.match_count
-  };
+  STATE.session = { id: s.id, playerId: s.player_id, displayName: s.display_name, totalScore: s.total_score, matchCount: s.match_count };
   document.getElementById('player-name-input').value = s.display_name;
   showToast(`Session resumed! ${s.total_score} pts across ${s.match_count} matches.`, 4000);
   showOverlay('overlay-start');
@@ -1310,11 +1212,9 @@ async function resumeSession(sessionId) {
 function beginMatch() {
   STATE.phase = 'playing';
   STATE.match = { score: 0, targetGoals: 0, playerGoals: 0, startTime: Date.now(), events: [] };
-
   spawnObstacles();
   resetPlayer();
   resetTarget();
-
   showOverlay(null);
   startTimer();
   startLoop();
@@ -1324,11 +1224,9 @@ function beginMatch() {
 async function endMatch() {
   clearInterval(STATE.timerInterval);
   STATE.phase = 'matchend';
-
   const matchScore = STATE.match?.score || 0;
   STATE.session.totalScore += matchScore;
   STATE.session.matchCount++;
-
   const matchNum = STATE.session.matchCount;
   await dbFetch('ff_match_results', {
     method: 'POST',
@@ -1343,17 +1241,11 @@ async function endMatch() {
     }),
     prefer: 'return=minimal'
   });
-
   await dbFetch(`ff_sessions?id=eq.${STATE.session.id}`, {
     method: 'PATCH',
-    body: JSON.stringify({
-      total_score: STATE.session.totalScore,
-      match_count: STATE.session.matchCount,
-      last_active_at: new Date().toISOString()
-    }),
+    body: JSON.stringify({ total_score: STATE.session.totalScore, match_count: STATE.session.matchCount, last_active_at: new Date().toISOString() }),
     prefer: 'return=minimal'
   });
-
   if (STATE.session.playerId) {
     const pRes = await dbFetch(`ff_players?id=eq.${STATE.session.playerId}`, {method:'GET'});
     if (pRes && pRes.length > 0) {
@@ -1366,13 +1258,11 @@ async function endMatch() {
       });
     }
   }
-
   document.getElementById('matchend-title').textContent = `Match ${matchNum} Over!`;
   document.getElementById('matchend-sessionid').textContent = STATE.session.id;
   document.getElementById('me-score').textContent   = matchScore;
   document.getElementById('me-total').textContent   = STATE.session.totalScore;
   document.getElementById('me-matches').textContent = STATE.session.matchCount;
-
   showOverlay('overlay-matchend');
   updateHUD();
 }
@@ -1384,16 +1274,11 @@ async function endSession() {
     body: JSON.stringify({ status: 'completed', last_active_at: new Date().toISOString() }),
     prefer: 'return=minimal'
   });
-
-  const avg = STATE.session.matchCount > 0
-    ? (STATE.session.totalScore / STATE.session.matchCount).toFixed(1)
-    : '0';
-
+  const avg = STATE.session.matchCount > 0 ? (STATE.session.totalScore / STATE.session.matchCount).toFixed(1) : '0';
   document.getElementById('se-sessionid').textContent = STATE.session.id;
   document.getElementById('se-total').textContent     = STATE.session.totalScore;
   document.getElementById('se-matches').textContent   = STATE.session.matchCount;
   document.getElementById('se-avg').textContent       = avg;
-
   showOverlay('overlay-sessionend');
   loadLeaderboard();
 }
@@ -1420,7 +1305,6 @@ async function loadLeaderboard() {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--color-text-muted);padding:var(--space-8)">No players yet. Be the first!</td></tr>';
     return;
   }
-
   const tierClass = { 'Pot 1 — Elite':'tier-1','Pot 2 — Contender':'tier-2','Pot 3 — Challenger':'tier-3','Pot 4 — Rising':'tier-4' };
   tbody.innerHTML = res.map((p, i) => {
     const rankN = i < 3 ? `rank-${i+1}` : 'rank-n';
@@ -1455,63 +1339,29 @@ function showToast(msg, duration=3000) {
    EVENT BINDINGS
 ═══════════════════════════════════════════════ */
 document.getElementById('start-btn').addEventListener('click', startNewGame);
-
-document.getElementById('resume-game-btn').addEventListener('click', () => {
-  STATE.phase = 'playing';
-  resumeTimer();
-  showOverlay(null);
-});
-
+document.getElementById('resume-game-btn').addEventListener('click', () => { STATE.phase = 'playing'; resumeTimer(); showOverlay(null); });
 document.getElementById('quit-btn').addEventListener('click', endMatch);
-
-document.getElementById('next-match-btn').addEventListener('click', () => {
-  if (STATE.session) beginMatch();
-});
-
+document.getElementById('next-match-btn').addEventListener('click', () => { if (STATE.session) beginMatch(); });
 document.getElementById('end-session-btn').addEventListener('click', endSession);
-
-document.getElementById('new-game-btn').addEventListener('click', () => {
-  STATE.session = null; STATE.match = null;
-  showOverlay('overlay-start');
-});
-
+document.getElementById('new-game-btn').addEventListener('click', () => { STATE.session = null; STATE.match = null; showOverlay('overlay-start'); });
 document.getElementById('copy-id-btn').addEventListener('click', () => {
   const id = STATE.session?.id || '';
   navigator.clipboard.writeText(id).then(() => showToast('Session ID copied!'));
 });
-
 document.getElementById('lb-toggle-btn').addEventListener('click', () => {
   const lb = document.getElementById('leaderboard-wrap');
-  if (lb.style.display === 'none') {
-    lb.style.display = '';
-    loadLeaderboard();
-  } else {
-    lb.style.display = 'none';
-  }
+  if (lb.style.display === 'none') { lb.style.display = ''; loadLeaderboard(); } else { lb.style.display = 'none'; }
 });
-
-document.getElementById('lb-close-btn').addEventListener('click', () => {
-  document.getElementById('leaderboard-wrap').style.display = 'none';
-});
-
-document.getElementById('resume-btn').addEventListener('click', () => {
-  showOverlay('overlay-resume');
-});
-
-document.getElementById('cancel-resume-btn').addEventListener('click', () => {
-  showOverlay('overlay-start');
-});
-
+document.getElementById('lb-close-btn').addEventListener('click', () => { document.getElementById('leaderboard-wrap').style.display = 'none'; });
+document.getElementById('resume-btn').addEventListener('click', () => { showOverlay('overlay-resume'); });
+document.getElementById('cancel-resume-btn').addEventListener('click', () => { showOverlay('overlay-start'); });
 document.getElementById('do-resume-btn').addEventListener('click', async () => {
   const id = document.getElementById('resume-id-input').value.trim();
   if (!id) return;
   showOverlay('overlay-start');
   await resumeSession(id);
 });
-
-document.getElementById('player-name-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') startNewGame();
-});
+document.getElementById('player-name-input').addEventListener('keydown', e => { if (e.key === 'Enter') startNewGame(); });
 
 /* ═══════════════════════════════════════════════
    BOOT
