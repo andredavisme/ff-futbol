@@ -172,6 +172,28 @@ header {
   color: var(--color-text);
   white-space: nowrap;
 }
+/* Session ID pill shown in HUD once a session starts */
+#hud-session-pill {
+  display: none;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+#hud-session-pill.visible { display: flex; }
+#hud-sid-value {
+  font-family: var(--font-display);
+  font-size: 9px;
+  color: var(--color-accent);
+  word-break: break-all;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  padding: 2px 4px;
+  background: rgba(16,185,129,0.08);
+  border: 1px solid rgba(16,185,129,0.2);
+  transition: background var(--transition);
+}
+#hud-sid-value:hover { background: rgba(16,185,129,0.18); }
 #canvas-container {
   flex: 1;
   position: relative;
@@ -311,6 +333,11 @@ header {
         <div class="score-breakdown">
           <div class="score-row"><span><span class="score-dot dot-match"></span>Total pts</span><span id="hud-stotal" class="tabnum">0</span></div>
           <div class="score-row"><span>Matches</span><span id="hud-smatch" class="tabnum">0</span></div>
+        </div>
+        <!-- Session ID pill — shown as soon as the first match starts -->
+        <div id="hud-session-pill">
+          <div class="hud-label" style="margin-top:var(--space-2);margin-bottom:var(--space-1)">Session ID <span style="color:var(--color-accent);font-size:9px">(click to copy)</span></div>
+          <div id="hud-sid-value" title="Click to copy session ID">—</div>
         </div>
       </div>
       <div class="hud-panel">
@@ -462,10 +489,9 @@ const ctx = canvas.getContext('2d');
 const FIELD = {
   W: 700, H: 520,
   wallT: 8,
-  goalW: 100,   // single center goal width
+  goalW: 100,
 };
 
-// Single center goal
 const GOAL = {
   get x() { return FIELD.W/2 - FIELD.goalW/2; },
   get w() { return FIELD.goalW; },
@@ -493,7 +519,7 @@ function cv(name) {
 /* ═══════════════════════════════════════════════
    PHYSICS CONSTANTS
 ═══════════════════════════════════════════════ */
-const COR_BALL_WALL   = 0.82;   // ↑ snappier wall bounce for the target
+const COR_BALL_WALL   = 0.82;
 const COR_BALL_PLAYER = 0.85;
 const COR_PLAYER_WALL = 0.45;
 const COR_PLAYER_OBS  = 0.50;
@@ -501,9 +527,8 @@ const MASS_PLAYER = 3.0;
 const MASS_TARGET = 1.0;
 const MASS_OBSTACLE = Infinity;
 
-/* Extra "kick launch" impulse applied to the target on player contact */
-const KICK_LAUNCH_BONUS = 280;   // extra speed units added along kick normal
-const KICK_LAUNCH_UP_BIAS = 0.35; // fraction of bonus redirected upward
+const KICK_LAUNCH_BONUS   = 280;
+const KICK_LAUNCH_UP_BIAS = 0.35;
 
 /* ═══════════════════════════════════════════════
    PHYSICS ENTITIES
@@ -537,13 +562,11 @@ const TARGET = {
   respawnTimer: 0,
   active: true,
   scoreCooldown: 0,
-  // Wall-hit effect state
-  wallHitFlash: 0,   // countdown timer for visual flash on wall collision
+  wallHitFlash: 0,
 };
 
 const OBSTACLES = [];
 
-/* Bounding-circle radius of player */
 const PLAYER_R = Math.sqrt((28/2)**2 + (18/2)**2);
 
 /* ═══════════════════════════════════════════════
@@ -565,23 +588,15 @@ window.addEventListener('keyup', e => { KEYS[e.code] = false; });
 function randRange(min, max) { return min + Math.random() * (max - min); }
 function randInt(min, max)   { return Math.floor(randRange(min, max+1)); }
 
-/* ── Spawn zone thresholds ──────────────────────
-   Obstacles and target spawn in the upper portion of the field.
-   Avatar always spawns in the LOWER portion, strictly below both.
-   avatarSpawnMinY = the Y below which the avatar can appear.
-   We keep this at least 65% down the field so it's always clearly
-   lower than the obstacle/target zone (which tops out at ~35-45%).
-───────────────────────────────────────────────── */
-const SPAWN_OBSTACLE_TOP    = FIELD.H * 0.35;  // obstacles start here
-const SPAWN_TARGET_MIN_Y    = FIELD.H * 0.45;  // target spawns from here
-const AVATAR_SPAWN_MIN_Y    = FIELD.H * 0.68;  // avatar always below this line
-const AVATAR_SPAWN_MARGIN   = 60;
+const SPAWN_OBSTACLE_TOP  = FIELD.H * 0.35;
+const SPAWN_TARGET_MIN_Y  = FIELD.H * 0.45;
+const AVATAR_SPAWN_MIN_Y  = FIELD.H * 0.68;
+const AVATAR_SPAWN_MARGIN = 60;
 
 function spawnObstacles() {
   OBSTACLES.length = 0;
   const count = randInt(3, 6);
   const margin = 60;
-  // Obstacles confined to upper-mid zone (35%–65% of height)
   const obsTopClear  = SPAWN_OBSTACLE_TOP;
   const obsBottomMax = FIELD.H * 0.65;
   for (let i = 0; i < count; i++) {
@@ -606,7 +621,6 @@ function randomFieldPos(margin=60) {
   };
 }
 
-/* Avatar always spawns in the lower zone, strictly below obstacles and target */
 function randomAvatarPos() {
   return {
     x: randRange(AVATAR_SPAWN_MARGIN, FIELD.W - AVATAR_SPAWN_MARGIN),
@@ -638,6 +652,22 @@ function resetTarget(delay=0) {
 }
 
 /* ═══════════════════════════════════════════════
+   SESSION ID HUD PILL
+═══════════════════════════════════════════════ */
+function showSessionIdInHud(id) {
+  const pill  = document.getElementById('hud-session-pill');
+  const value = document.getElementById('hud-sid-value');
+  value.textContent = id;
+  pill.classList.add('visible');
+}
+
+document.getElementById('hud-sid-value').addEventListener('click', () => {
+  const id = STATE.session?.id;
+  if (!id) return;
+  navigator.clipboard.writeText(id).then(() => showToast('Session ID copied!', 2500));
+});
+
+/* ═══════════════════════════════════════════════
    COLLISION — AABB helpers
 ═══════════════════════════════════════════════ */
 function circleRect(cx, cy, cr, rx, ry, rw, rh) {
@@ -647,7 +677,6 @@ function circleRect(cx, cy, cr, rx, ry, rw, rh) {
   return dx*dx + dy*dy < cr*cr;
 }
 
-/* Elastic collision: circle vs immovable rect */
 function resolveCircleRect(entity, rx, ry, rw, rh, cor) {
   const nearX = Math.max(rx, Math.min(entity.x, rx + rw));
   const nearY = Math.max(ry, Math.min(entity.y, ry + rh));
@@ -661,7 +690,6 @@ function resolveCircleRect(entity, rx, ry, rw, rh, cor) {
   if (dot < 0) {
     entity.vx -= (1 + cor) * dot * nx;
     entity.vy -= (1 + cor) * dot * ny;
-    // Add a tiny random lateral nudge on obstacle hits for liveliness
     const perp = Math.random() * 30 - 15;
     entity.vx += -ny * perp;
     entity.vy +=  nx * perp;
@@ -670,7 +698,6 @@ function resolveCircleRect(entity, rx, ry, rw, rh, cor) {
   return true;
 }
 
-/* Player wall collision using bounding-circle proxy */
 function resolvePlayerCircleRect(rx, ry, rw, rh, cor) {
   const nearX = Math.max(rx, Math.min(PLAYER.x, rx + rw));
   const nearY = Math.max(ry, Math.min(PLAYER.y, ry + rh));
@@ -688,7 +715,6 @@ function resolvePlayerCircleRect(rx, ry, rw, rh, cor) {
   return true;
 }
 
-/* rotated rectangle corners for player */
 function playerCorners() {
   const hw = PLAYER.w/2, hh = PLAYER.h/2;
   const cos = Math.cos(PLAYER.angle), sin = Math.sin(PLAYER.angle);
@@ -708,7 +734,6 @@ function isInGoalXRange(left, right) {
 }
 
 function checkGoal(dt) {
-  // --- TARGET ---
   if (TARGET.active && !TARGET.respawning) {
     if (TARGET.scoreCooldown > 0) {
       TARGET.scoreCooldown -= dt;
@@ -725,7 +750,6 @@ function checkGoal(dt) {
     }
   }
 
-  // --- PLAYER ---
   if (PLAYER.active && !PLAYER.respawning) {
     const corners = playerCorners();
     const allX = corners.map(c=>c.x);
@@ -789,7 +813,7 @@ function showFlash(text, color) {
 }
 
 /* ═══════════════════════════════════════════════
-   KICK PARTICLES  (brief spark burst on kick contact)
+   KICK PARTICLES
 ═══════════════════════════════════════════════ */
 const kickParticles = [];
 
@@ -814,7 +838,7 @@ function updateKickParticles(dt) {
     const p = kickParticles[i];
     p.x += p.vx * dt;
     p.y += p.vy * dt;
-    p.vy += 200 * dt; // gravity pull
+    p.vy += 200 * dt;
     p.life -= p.decay * dt;
     if (p.life <= 0) kickParticles.splice(i, 1);
   }
@@ -847,7 +871,6 @@ function update(ts) {
   const justSpace = JUST_PRESSED['Space'];
   JUST_PRESSED['Space'] = false;
 
-  // --- Player input ---
   if (PLAYER.active && !PLAYER.respawning) {
     if (KEYS['ArrowLeft'])  PLAYER.angle -= PLAYER.rotSpeed * dt;
     if (KEYS['ArrowRight']) PLAYER.angle += PLAYER.rotSpeed * dt;
@@ -886,7 +909,6 @@ function update(ts) {
     PLAYER.x += PLAYER.vx * dt;
     PLAYER.y += PLAYER.vy * dt;
 
-    // Wall collisions
     if (PLAYER.x - PLAYER_R < FIELD.wallT) {
       PLAYER.x = FIELD.wallT + PLAYER_R;
       if (PLAYER.vx < 0) PLAYER.vx *= -(COR_PLAYER_WALL);
@@ -914,7 +936,6 @@ function update(ts) {
       resolvePlayerCircleRect(o.x, o.y, o.w, o.h, COR_PLAYER_OBS);
     });
 
-    // Player-target elastic collision with KICK LAUNCH boost
     if (TARGET.active && !TARGET.respawning) {
       const dx = TARGET.x - PLAYER.x, dy = TARGET.y - PLAYER.y;
       const dist = Math.sqrt(dx*dx + dy*dy);
@@ -928,7 +949,6 @@ function update(ts) {
         TARGET.x += nx * overlap * (mP/mSum);
         TARGET.y += ny * overlap * (mP/mSum);
 
-        // Standard elastic impulse
         const relV = (PLAYER.vx - TARGET.vx)*nx + (PLAYER.vy - TARGET.vy)*ny;
         if (relV > 0) {
           const j = (1 + COR_BALL_PLAYER) * relV / (1/mP + 1/mT);
@@ -937,15 +957,12 @@ function update(ts) {
           TARGET.vx += (j/mT)*nx;
           TARGET.vy += (j/mT)*ny;
 
-          // ── KICK LAUNCH: add bonus velocity in kick direction + upward bias ──
           const playerSpd = Math.sqrt(PLAYER.vx**2 + PLAYER.vy**2);
-          // Scale bonus with player speed so faster hits feel harder
           const speedFactor = Math.min(1.0, playerSpd / PLAYER.maxSpeed);
           const bonus = KICK_LAUNCH_BONUS * (0.5 + 0.5 * speedFactor);
           TARGET.vx += nx * bonus * (1 - KICK_LAUNCH_UP_BIAS);
           TARGET.vy += ny * bonus * (1 - KICK_LAUNCH_UP_BIAS) - bonus * KICK_LAUNCH_UP_BIAS;
 
-          // Spark particles at contact point
           const cx = PLAYER.x + nx * PLAYER_R;
           const cy = PLAYER.y + ny * PLAYER_R;
           spawnKickParticles(cx, cy, nx, ny);
@@ -954,19 +971,17 @@ function update(ts) {
     }
   }
 
-  // --- Target physics ---
   if (TARGET.active && !TARGET.respawning) {
     TARGET.vx *= Math.pow(TARGET.friction, dt*60);
     TARGET.vy *= Math.pow(TARGET.friction, dt*60);
     TARGET.x += TARGET.vx * dt;
     TARGET.y += TARGET.vy * dt;
 
-    // Wall bounces — snappier COR + small lateral randomness for liveliness
     if (TARGET.x - TARGET.r < FIELD.wallT) {
       TARGET.x = FIELD.wallT + TARGET.r;
       if (TARGET.vx < 0) {
         TARGET.vx *= -(COR_BALL_WALL);
-        TARGET.vy += (Math.random() - 0.5) * 40;  // slight deflection on wall hit
+        TARGET.vy += (Math.random() - 0.5) * 40;
         TARGET.wallHitFlash = 0.1;
       }
     }
@@ -1006,7 +1021,6 @@ function update(ts) {
     if (TARGET.wallHitFlash  > 0) TARGET.wallHitFlash  -= dt;
   }
 
-  // --- Respawn timers ---
   if (PLAYER.respawning) {
     PLAYER.respawnTimer -= dt;
     if (PLAYER.respawnTimer <= 0) { resetPlayer(); }
@@ -1016,13 +1030,8 @@ function update(ts) {
     if (TARGET.respawnTimer <= 0) { resetTarget(0.4); }
   }
 
-  // --- Kick particles ---
   updateKickParticles(dt);
-
-  // --- Goal detection ---
   checkGoal(dt);
-
-  // --- HUD ---
   updateHUD();
 }
 
@@ -1034,7 +1043,6 @@ function render() {
   ctx.fillStyle = cv('--game-field');
   ctx.fillRect(0, 0, FIELD.W, FIELD.H);
 
-  // Field lines
   ctx.strokeStyle = cv('--game-field-line');
   ctx.lineWidth = 1;
   ctx.setLineDash([6, 8]);
@@ -1042,7 +1050,6 @@ function render() {
   ctx.beginPath(); ctx.arc(FIELD.W/2, FIELD.H/2, 60, 0, Math.PI*2); ctx.stroke();
   ctx.setLineDash([]);
 
-  // Walls
   const wc = cv('--game-wall');
   ctx.fillStyle = wc;
   ctx.fillRect(0, 0, FIELD.wallT, FIELD.H);
@@ -1052,7 +1059,6 @@ function render() {
   ctx.fillRect(0,       0, goalX,              FIELD.wallT);
   ctx.fillRect(goalX + goalW, 0, FIELD.W - (goalX + goalW), FIELD.wallT);
 
-  // Wall glow
   const wallGrad = ctx.createLinearGradient(0, 0, 0, FIELD.wallT + 6);
   wallGrad.addColorStop(0, cv('--game-wall-glow'));
   wallGrad.addColorStop(1, 'transparent');
@@ -1060,7 +1066,6 @@ function render() {
   ctx.fillRect(0,       0, goalX,              FIELD.wallT + 6);
   ctx.fillRect(goalX + goalW, 0, FIELD.W - (goalX + goalW), FIELD.wallT + 6);
 
-  // Goal rendering
   const grd = ctx.createLinearGradient(goalX, 0, goalX, 50);
   grd.addColorStop(0, cv('--game-exit-glow'));
   grd.addColorStop(1, 'transparent');
@@ -1080,7 +1085,6 @@ function render() {
   ctx.textAlign = 'center';
   ctx.fillText('GOAL', goalX + goalW/2, 22);
 
-  // Obstacles
   OBSTACLES.forEach(o => {
     ctx.fillStyle = cv('--game-obstacle');
     roundRect(ctx, o.x, o.y, o.w, o.h, 4);
@@ -1091,10 +1095,8 @@ function render() {
     ctx.stroke();
   });
 
-  // Kick particles (behind entities)
   drawKickParticles();
 
-  // Target
   if (TARGET.active && !TARGET.respawning) {
     drawTarget();
   } else if (TARGET.respawning) {
@@ -1110,7 +1112,6 @@ function render() {
     ctx.globalAlpha = 1;
   }
 
-  // Player
   if (PLAYER.active && !PLAYER.respawning) {
     if (KEYS['Space']) {
       ctx.save();
@@ -1159,7 +1160,6 @@ function drawPlayer() {
 
 function drawTarget() {
   ctx.save();
-  // Wall-hit flash: briefly brighten the glow
   const flashGlow = TARGET.wallHitFlash > 0 ? 28 + TARGET.wallHitFlash * 80 : 16;
   const flashAlpha = TARGET.wallHitFlash > 0 ? 1.0 : 0.9;
   ctx.shadowBlur = flashGlow;
@@ -1285,6 +1285,11 @@ async function startNewGame() {
   });
   const sessionId = sessRes?.[0]?.id || crypto.randomUUID();
   STATE.session = { id: sessionId, playerId, displayName: name, totalScore: 0, matchCount: 0 };
+
+  // ── Show session ID immediately so player can record it before playing ──
+  showSessionIdInHud(sessionId);
+  showToast(`Session started — ID copied to HUD. Click it to copy.`, 5000);
+
   beginMatch();
 }
 
@@ -1294,6 +1299,7 @@ async function resumeSession(sessionId) {
   const s = res[0];
   STATE.session = { id: s.id, playerId: s.player_id, displayName: s.display_name, totalScore: s.total_score, matchCount: s.match_count };
   document.getElementById('player-name-input').value = s.display_name;
+  showSessionIdInHud(s.id);
   showToast(`Session resumed! ${s.total_score} pts across ${s.match_count} matches.`, 4000);
   showOverlay('overlay-start');
 }
@@ -1302,7 +1308,7 @@ function beginMatch() {
   STATE.phase = 'playing';
   STATE.match = { score: 0, targetGoals: 0, playerGoals: 0, startTime: Date.now(), events: [] };
   spawnObstacles();
-  resetPlayer();   // avatar always spawns in lower zone
+  resetPlayer();
   resetTarget();
   showOverlay(null);
   startTimer();
