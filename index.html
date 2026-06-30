@@ -471,8 +471,6 @@ const GOAL = {
   get w() { return FIELD.goalW; },
   y: 0,
   h: FIELD.wallT + 2,
-  // Goal zone: the region above y=0 within x range
-  // We track scored = false to prevent double counting during a single crossing
   scored: false,
 };
 
@@ -493,17 +491,19 @@ function cv(name) {
 }
 
 /* ═══════════════════════════════════════════════
-   PHYSICS CONSTANTS  (real-world style)
+   PHYSICS CONSTANTS
 ═══════════════════════════════════════════════ */
-// Coefficient of restitution: 0=perfectly inelastic, 1=perfectly elastic
-const COR_BALL_WALL   = 0.72;   // target vs walls/obstacles
-const COR_BALL_PLAYER = 0.85;   // target vs player
-const COR_PLAYER_WALL = 0.45;   // player vs walls
-const COR_PLAYER_OBS  = 0.50;   // player vs obstacle
-// Effective masses (arbitrary units for momentum transfer)
+const COR_BALL_WALL   = 0.82;   // ↑ snappier wall bounce for the target
+const COR_BALL_PLAYER = 0.85;
+const COR_PLAYER_WALL = 0.45;
+const COR_PLAYER_OBS  = 0.50;
 const MASS_PLAYER = 3.0;
 const MASS_TARGET = 1.0;
-const MASS_OBSTACLE = Infinity; // immovable
+const MASS_OBSTACLE = Infinity;
+
+/* Extra "kick launch" impulse applied to the target on player contact */
+const KICK_LAUNCH_BONUS = 280;   // extra speed units added along kick normal
+const KICK_LAUNCH_UP_BIAS = 0.35; // fraction of bonus redirected upward
 
 /* ═══════════════════════════════════════════════
    PHYSICS ENTITIES
@@ -516,28 +516,29 @@ const PLAYER = {
   speed: 0,
   maxSpeed: 340,
   accel: 480,
-  boostForce: 980,      // ↑ big boost on spacebar press
-  boostMaxSpeed: 700,   // uncapped during boost
+  boostForce: 980,
+  boostMaxSpeed: 700,
   friction: 0.86,
   brakeForce: 0.42,
   rotSpeed: 3.2,
   respawning: false,
   respawnTimer: 0,
   active: true,
-  boostCooldown: 0,     // prevents instant re-boost spam
+  boostCooldown: 0,
 };
 
 const TARGET = {
   x: FIELD.W/2, y: FIELD.H/2,
   r: 12,
   vx: 0, vy: 0,
-  friction: 0.975,   // near-frictionless on field (roll)
+  friction: 0.975,
   lastTouched: 'none',
   respawning: false,
   respawnTimer: 0,
   active: true,
-  // Safe-spawn: wait until fully clear of goal zone before re-arming score detection
   scoreCooldown: 0,
+  // Wall-hit effect state
+  wallHitFlash: 0,   // countdown timer for visual flash on wall collision
 };
 
 const OBSTACLES = [];
@@ -564,18 +565,32 @@ window.addEventListener('keyup', e => { KEYS[e.code] = false; });
 function randRange(min, max) { return min + Math.random() * (max - min); }
 function randInt(min, max)   { return Math.floor(randRange(min, max+1)); }
 
+/* ── Spawn zone thresholds ──────────────────────
+   Obstacles and target spawn in the upper portion of the field.
+   Avatar always spawns in the LOWER portion, strictly below both.
+   avatarSpawnMinY = the Y below which the avatar can appear.
+   We keep this at least 65% down the field so it's always clearly
+   lower than the obstacle/target zone (which tops out at ~35-45%).
+───────────────────────────────────────────────── */
+const SPAWN_OBSTACLE_TOP    = FIELD.H * 0.35;  // obstacles start here
+const SPAWN_TARGET_MIN_Y    = FIELD.H * 0.45;  // target spawns from here
+const AVATAR_SPAWN_MIN_Y    = FIELD.H * 0.68;  // avatar always below this line
+const AVATAR_SPAWN_MARGIN   = 60;
+
 function spawnObstacles() {
   OBSTACLES.length = 0;
   const count = randInt(3, 6);
   const margin = 60;
-  const topClear = FIELD.H * 0.35;
+  // Obstacles confined to upper-mid zone (35%–65% of height)
+  const obsTopClear  = SPAWN_OBSTACLE_TOP;
+  const obsBottomMax = FIELD.H * 0.65;
   for (let i = 0; i < count; i++) {
     let tries = 0, placed = false;
     while (tries++ < 50 && !placed) {
       const w = randRange(30, 70);
       const h = randRange(20, 50);
       const x = randRange(margin, FIELD.W - margin - w);
-      const y = randRange(topClear, FIELD.H - margin - h);
+      const y = randRange(obsTopClear, obsBottomMax - h);
       const overlap = OBSTACLES.some(o =>
         x < o.x+o.w+20 && x+w > o.x-20 && y < o.y+o.h+20 && y+h > o.y-20
       );
@@ -591,8 +606,16 @@ function randomFieldPos(margin=60) {
   };
 }
 
+/* Avatar always spawns in the lower zone, strictly below obstacles and target */
+function randomAvatarPos() {
+  return {
+    x: randRange(AVATAR_SPAWN_MARGIN, FIELD.W - AVATAR_SPAWN_MARGIN),
+    y: randRange(AVATAR_SPAWN_MIN_Y, FIELD.H - AVATAR_SPAWN_MARGIN)
+  };
+}
+
 function resetPlayer() {
-  const p = randomFieldPos(80);
+  const p = randomAvatarPos();
   PLAYER.x = p.x; PLAYER.y = p.y;
   PLAYER.vx = 0; PLAYER.vy = 0;
   PLAYER.speed = 0;
@@ -603,7 +626,6 @@ function resetPlayer() {
 }
 
 function resetTarget(delay=0) {
-  // delay: extra cooldown before score detection re-arms
   const p = randomFieldPos(60);
   TARGET.x = p.x; TARGET.y = p.y;
   TARGET.vx = randRange(-80, 80);
@@ -611,9 +633,8 @@ function resetTarget(delay=0) {
   TARGET.active = true;
   TARGET.respawning = false;
   TARGET.lastTouched = 'none';
-  // scoreCooldown: prevents counting a score the instant the ball spawns
-  // This also covers the edge case where spawn happens inside or near goal zone
   TARGET.scoreCooldown = 0.6 + delay;
+  TARGET.wallHitFlash = 0;
 }
 
 /* ═══════════════════════════════════════════════
@@ -626,7 +647,7 @@ function circleRect(cx, cy, cr, rx, ry, rw, rh) {
   return dx*dx + dy*dy < cr*cr;
 }
 
-/* Elastic collision: circle vs immovable rect, returns true if collided */
+/* Elastic collision: circle vs immovable rect */
 function resolveCircleRect(entity, rx, ry, rw, rh, cor) {
   const nearX = Math.max(rx, Math.min(entity.x, rx + rw));
   const nearY = Math.max(ry, Math.min(entity.y, ry + rh));
@@ -634,14 +655,17 @@ function resolveCircleRect(entity, rx, ry, rw, rh, cor) {
   const dist = Math.sqrt(dx*dx + dy*dy);
   if (dist === 0 || dist >= entity.r) return false;
   const nx = dx/dist, ny = dy/dist;
-  // push out
   entity.x = nearX + nx*(entity.r + 1);
   entity.y = nearY + ny*(entity.r + 1);
-  // reflect velocity along normal with restitution
   const dot = entity.vx*nx + entity.vy*ny;
   if (dot < 0) {
     entity.vx -= (1 + cor) * dot * nx;
     entity.vy -= (1 + cor) * dot * ny;
+    // Add a tiny random lateral nudge on obstacle hits for liveliness
+    const perp = Math.random() * 30 - 15;
+    entity.vx += -ny * perp;
+    entity.vy +=  nx * perp;
+    entity.wallHitFlash = 0.12;
   }
   return true;
 }
@@ -678,8 +702,6 @@ function playerCorners() {
 
 /* ═══════════════════════════════════════════════
    GOAL / SCORING DETECTION
-   Only scores when entity fully clears y<=0 and is within goal x-range.
-   scoreCooldown prevents counting a target that just spawned or just scored.
 ═══════════════════════════════════════════════ */
 function isInGoalXRange(left, right) {
   return left >= GOAL.x && right <= GOAL.x + GOAL.w;
@@ -698,7 +720,6 @@ function checkGoal(dt) {
         onScore('target');
         TARGET.active = false;
         TARGET.respawning = true;
-        // Respawn timer: 1.2s hidden + score cooldown baked in
         TARGET.respawnTimer = 1.2;
       }
     }
@@ -768,6 +789,52 @@ function showFlash(text, color) {
 }
 
 /* ═══════════════════════════════════════════════
+   KICK PARTICLES  (brief spark burst on kick contact)
+═══════════════════════════════════════════════ */
+const kickParticles = [];
+
+function spawnKickParticles(x, y, nx, ny) {
+  for (let i = 0; i < 8; i++) {
+    const spread = (Math.random() - 0.5) * Math.PI * 0.7;
+    const speed  = randRange(120, 340);
+    const angle  = Math.atan2(ny, nx) + spread;
+    kickParticles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 1.0,
+      decay: randRange(3.5, 6.0),
+      r: randRange(2, 4.5),
+    });
+  }
+}
+
+function updateKickParticles(dt) {
+  for (let i = kickParticles.length - 1; i >= 0; i--) {
+    const p = kickParticles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy += 200 * dt; // gravity pull
+    p.life -= p.decay * dt;
+    if (p.life <= 0) kickParticles.splice(i, 1);
+  }
+}
+
+function drawKickParticles() {
+  kickParticles.forEach(p => {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, p.life) * 0.85;
+    ctx.fillStyle = '#f59e0b';
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = '#ec4899';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+/* ═══════════════════════════════════════════════
    PHYSICS UPDATE
 ═══════════════════════════════════════════════ */
 let lastTime = null;
@@ -777,7 +844,6 @@ function update(ts) {
   const dt = lastTime ? Math.min((ts - lastTime)/1000, 0.05) : 0.016;
   lastTime = ts;
 
-  // Clear just-pressed after use
   const justSpace = JUST_PRESSED['Space'];
   JUST_PRESSED['Space'] = false;
 
@@ -789,7 +855,6 @@ function update(ts) {
     const braking = KEYS['ControlRight'];
     PLAYER.boostCooldown = Math.max(0, PLAYER.boostCooldown - dt);
 
-    // Normal forward/backward
     if (KEYS['ArrowUp']) {
       PLAYER.vx += Math.cos(PLAYER.angle) * PLAYER.accel * dt;
       PLAYER.vy += Math.sin(PLAYER.angle) * PLAYER.accel * dt;
@@ -799,20 +864,17 @@ function update(ts) {
       PLAYER.vy -= Math.sin(PLAYER.angle) * PLAYER.accel * 0.5 * dt;
     }
 
-    // BOOST: large impulse on spacebar press (while cooldown expired)
     if (KEYS['Space'] && PLAYER.boostCooldown <= 0) {
-      // Impulse in facing direction — adds momentum, not just sets velocity
       const impulse = PLAYER.boostForce * dt;
       PLAYER.vx += Math.cos(PLAYER.angle) * impulse;
       PLAYER.vy += Math.sin(PLAYER.angle) * impulse;
-      PLAYER.boostCooldown = 0.08; // slight cooldown to prevent instant double-tap abuse
+      PLAYER.boostCooldown = 0.08;
     }
 
     const fric = braking ? PLAYER.brakeForce : PLAYER.friction;
     PLAYER.vx *= Math.pow(fric, dt*60);
     PLAYER.vy *= Math.pow(fric, dt*60);
 
-    // Speed cap (no cap during boost to allow burst)
     const spd = Math.sqrt(PLAYER.vx**2 + PLAYER.vy**2);
     const boosting = KEYS['Space'] && PLAYER.boostCooldown <= 0.07;
     const maxSpd = boosting ? PLAYER.boostMaxSpeed : PLAYER.maxSpeed;
@@ -824,7 +886,7 @@ function update(ts) {
     PLAYER.x += PLAYER.vx * dt;
     PLAYER.y += PLAYER.vy * dt;
 
-    // Wall collisions with COR
+    // Wall collisions
     if (PLAYER.x - PLAYER_R < FIELD.wallT) {
       PLAYER.x = FIELD.wallT + PLAYER_R;
       if (PLAYER.vx < 0) PLAYER.vx *= -(COR_PLAYER_WALL);
@@ -837,7 +899,6 @@ function update(ts) {
       PLAYER.y = FIELD.H - FIELD.wallT - PLAYER_R;
       if (PLAYER.vy > 0) PLAYER.vy *= -(COR_PLAYER_WALL);
     }
-    // Top wall: block unless in goal opening
     if (PLAYER.y - PLAYER_R < FIELD.wallT) {
       const corners = playerCorners();
       const pL = Math.min(...corners.map(c=>c.x));
@@ -849,26 +910,25 @@ function update(ts) {
       }
     }
 
-    // Obstacle collisions
     OBSTACLES.forEach(o => {
       resolvePlayerCircleRect(o.x, o.y, o.w, o.h, COR_PLAYER_OBS);
     });
 
-    // Player-target elastic collision (mass-weighted)
+    // Player-target elastic collision with KICK LAUNCH boost
     if (TARGET.active && !TARGET.respawning) {
       const dx = TARGET.x - PLAYER.x, dy = TARGET.y - PLAYER.y;
       const dist = Math.sqrt(dx*dx + dy*dy);
       if (dist < PLAYER_R + TARGET.r && dist > 0) {
         TARGET.lastTouched = 'player';
         const nx = dx/dist, ny = dy/dist;
-        // Separate overlap
         const overlap = PLAYER_R + TARGET.r - dist + 1;
         const mT = MASS_TARGET, mP = MASS_PLAYER, mSum = mT + mP;
         PLAYER.x -= nx * overlap * (mT/mSum);
         PLAYER.y -= ny * overlap * (mT/mSum);
         TARGET.x += nx * overlap * (mP/mSum);
         TARGET.y += ny * overlap * (mP/mSum);
-        // 1D elastic collision along normal (COR)
+
+        // Standard elastic impulse
         const relV = (PLAYER.vx - TARGET.vx)*nx + (PLAYER.vy - TARGET.vy)*ny;
         if (relV > 0) {
           const j = (1 + COR_BALL_PLAYER) * relV / (1/mP + 1/mT);
@@ -876,6 +936,19 @@ function update(ts) {
           PLAYER.vy -= (j/mP)*ny;
           TARGET.vx += (j/mT)*nx;
           TARGET.vy += (j/mT)*ny;
+
+          // ── KICK LAUNCH: add bonus velocity in kick direction + upward bias ──
+          const playerSpd = Math.sqrt(PLAYER.vx**2 + PLAYER.vy**2);
+          // Scale bonus with player speed so faster hits feel harder
+          const speedFactor = Math.min(1.0, playerSpd / PLAYER.maxSpeed);
+          const bonus = KICK_LAUNCH_BONUS * (0.5 + 0.5 * speedFactor);
+          TARGET.vx += nx * bonus * (1 - KICK_LAUNCH_UP_BIAS);
+          TARGET.vy += ny * bonus * (1 - KICK_LAUNCH_UP_BIAS) - bonus * KICK_LAUNCH_UP_BIAS;
+
+          // Spark particles at contact point
+          const cx = PLAYER.x + nx * PLAYER_R;
+          const cy = PLAYER.y + ny * PLAYER_R;
+          spawnKickParticles(cx, cy, nx, ny);
         }
       }
     }
@@ -888,35 +961,49 @@ function update(ts) {
     TARGET.x += TARGET.vx * dt;
     TARGET.y += TARGET.vy * dt;
 
-    // Wall bounces
+    // Wall bounces — snappier COR + small lateral randomness for liveliness
     if (TARGET.x - TARGET.r < FIELD.wallT) {
       TARGET.x = FIELD.wallT + TARGET.r;
-      if (TARGET.vx < 0) TARGET.vx *= -(COR_BALL_WALL);
+      if (TARGET.vx < 0) {
+        TARGET.vx *= -(COR_BALL_WALL);
+        TARGET.vy += (Math.random() - 0.5) * 40;  // slight deflection on wall hit
+        TARGET.wallHitFlash = 0.1;
+      }
     }
     if (TARGET.x + TARGET.r > FIELD.W - FIELD.wallT) {
       TARGET.x = FIELD.W - FIELD.wallT - TARGET.r;
-      if (TARGET.vx > 0) TARGET.vx *= -(COR_BALL_WALL);
+      if (TARGET.vx > 0) {
+        TARGET.vx *= -(COR_BALL_WALL);
+        TARGET.vy += (Math.random() - 0.5) * 40;
+        TARGET.wallHitFlash = 0.1;
+      }
     }
     if (TARGET.y + TARGET.r > FIELD.H - FIELD.wallT) {
       TARGET.y = FIELD.H - FIELD.wallT - TARGET.r;
-      if (TARGET.vy > 0) TARGET.vy *= -(COR_BALL_WALL);
+      if (TARGET.vy > 0) {
+        TARGET.vy *= -(COR_BALL_WALL);
+        TARGET.vx += (Math.random() - 0.5) * 40;
+        TARGET.wallHitFlash = 0.1;
+      }
     }
-    // Top wall: block unless in goal
     if (TARGET.y - TARGET.r < FIELD.wallT) {
       const inGoal = TARGET.x >= GOAL.x && TARGET.x <= GOAL.x + GOAL.w;
       if (!inGoal) {
         TARGET.y = FIELD.wallT + TARGET.r;
-        if (TARGET.vy < 0) TARGET.vy *= -(COR_BALL_WALL);
+        if (TARGET.vy < 0) {
+          TARGET.vy *= -(COR_BALL_WALL);
+          TARGET.vx += (Math.random() - 0.5) * 40;
+          TARGET.wallHitFlash = 0.1;
+        }
       }
     }
 
-    // Obstacle collisions
     OBSTACLES.forEach(o => {
       resolveCircleRect(TARGET, o.x, o.y, o.w, o.h, COR_BALL_WALL);
     });
 
-    // Score cooldown tick
     if (TARGET.scoreCooldown > 0) TARGET.scoreCooldown -= dt;
+    if (TARGET.wallHitFlash  > 0) TARGET.wallHitFlash  -= dt;
   }
 
   // --- Respawn timers ---
@@ -926,11 +1013,11 @@ function update(ts) {
   }
   if (TARGET.respawning) {
     TARGET.respawnTimer -= dt;
-    if (TARGET.respawnTimer <= 0) {
-      // Extra 0.4s cooldown after spawn before scoring is re-armed
-      resetTarget(0.4);
-    }
+    if (TARGET.respawnTimer <= 0) { resetTarget(0.4); }
   }
+
+  // --- Kick particles ---
+  updateKickParticles(dt);
 
   // --- Goal detection ---
   checkGoal(dt);
@@ -958,13 +1045,12 @@ function render() {
   // Walls
   const wc = cv('--game-wall');
   ctx.fillStyle = wc;
-  ctx.fillRect(0, 0, FIELD.wallT, FIELD.H);                            // left
-  ctx.fillRect(FIELD.W - FIELD.wallT, 0, FIELD.wallT, FIELD.H);       // right
-  ctx.fillRect(0, FIELD.H - FIELD.wallT, FIELD.W, FIELD.wallT);        // bottom
-  // Top wall — gap for single goal
+  ctx.fillRect(0, 0, FIELD.wallT, FIELD.H);
+  ctx.fillRect(FIELD.W - FIELD.wallT, 0, FIELD.wallT, FIELD.H);
+  ctx.fillRect(0, FIELD.H - FIELD.wallT, FIELD.W, FIELD.wallT);
   const goalX = GOAL.x, goalW = GOAL.w;
-  ctx.fillRect(0,       0, goalX,              FIELD.wallT); // left of goal
-  ctx.fillRect(goalX + goalW, 0, FIELD.W - (goalX + goalW), FIELD.wallT); // right of goal
+  ctx.fillRect(0,       0, goalX,              FIELD.wallT);
+  ctx.fillRect(goalX + goalW, 0, FIELD.W - (goalX + goalW), FIELD.wallT);
 
   // Wall glow
   const wallGrad = ctx.createLinearGradient(0, 0, 0, FIELD.wallT + 6);
@@ -985,9 +1071,7 @@ function render() {
   ctx.lineWidth = 2.5;
   ctx.shadowBlur = 12;
   ctx.shadowColor = cv('--game-exit');
-  // Left post
   ctx.beginPath(); ctx.moveTo(goalX, 0); ctx.lineTo(goalX, FIELD.wallT + 10); ctx.stroke();
-  // Right post
   ctx.beginPath(); ctx.moveTo(goalX + goalW, 0); ctx.lineTo(goalX + goalW, FIELD.wallT + 10); ctx.stroke();
   ctx.shadowBlur = 0;
 
@@ -1007,6 +1091,9 @@ function render() {
     ctx.stroke();
   });
 
+  // Kick particles (behind entities)
+  drawKickParticles();
+
   // Target
   if (TARGET.active && !TARGET.respawning) {
     drawTarget();
@@ -1025,7 +1112,6 @@ function render() {
 
   // Player
   if (PLAYER.active && !PLAYER.respawning) {
-    // Boost trail effect when boosting
     if (KEYS['Space']) {
       ctx.save();
       ctx.globalAlpha = 0.18;
@@ -1073,10 +1159,13 @@ function drawPlayer() {
 
 function drawTarget() {
   ctx.save();
-  ctx.shadowBlur = 16;
-  ctx.shadowColor = cv('--game-target-glow');
+  // Wall-hit flash: briefly brighten the glow
+  const flashGlow = TARGET.wallHitFlash > 0 ? 28 + TARGET.wallHitFlash * 80 : 16;
+  const flashAlpha = TARGET.wallHitFlash > 0 ? 1.0 : 0.9;
+  ctx.shadowBlur = flashGlow;
+  ctx.shadowColor = TARGET.wallHitFlash > 0 ? '#ffffff' : cv('--game-target-glow');
   ctx.fillStyle = cv('--game-target');
-  ctx.globalAlpha = 0.9;
+  ctx.globalAlpha = flashAlpha;
   ctx.beginPath();
   ctx.arc(TARGET.x, TARGET.y, TARGET.r, 0, Math.PI*2);
   ctx.fill();
@@ -1213,7 +1302,7 @@ function beginMatch() {
   STATE.phase = 'playing';
   STATE.match = { score: 0, targetGoals: 0, playerGoals: 0, startTime: Date.now(), events: [] };
   spawnObstacles();
-  resetPlayer();
+  resetPlayer();   // avatar always spawns in lower zone
   resetTarget();
   showOverlay(null);
   startTimer();
