@@ -4,6 +4,8 @@ A browser-based soccer physics arena game with real-time collision, obstacle nav
 
 🎮 **[Play Field Frame →](https://andredavisme.github.io/ff-futbol/)**
 
+> *Find out what happens after the players leave the field — play **[The Thread: Prospect Run](https://andredavisme.github.io/the-thread-prospect-run/)**, a sales intelligence game set in the world beyond the pitch.*
+
 ---
 
 ## Player Manual
